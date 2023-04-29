@@ -8,14 +8,15 @@
  */
 int _strlen(char *s)
 {
-	int i = 0;
+	int len = 0;
 
 	if (!s)
 		return (0);
 
-	while (*s++)
-		i++;
-	return (i);
+	while (s[len] != '\0')
+		len++;
+
+	return (len);
 }
 
 /**
@@ -27,19 +28,22 @@ int _strlen(char *s)
  */
 int _strcmp(char *s1, char *s2)
 {
-	while (*s1 && *s2)
+	if (!s1 || !s2)
+		return (-1);
+
+	while (*s1 != '\0' && *s1 == *s2)
 	{
-		if (*s1 != *s2)
-			return (*s1 - *s2);
 		s1++;
 		s2++;
 	}
+
 	if (*s1 == *s2)
 		return (0);
+	else if (*s1 < *s2)
+		return (-1);
 	else
-		return (*s1 < *s2 ? -1 : 1);
+		return (1);
 }
-
 /**
  * starts_with - checks if needle starts with haystack
  * @haystack: string to search
@@ -47,11 +51,15 @@ int _strcmp(char *s1, char *s2)
  *
  * Return: address of next char of haystack or NULL
  */
-char *starts_with(const char *haystack, const char *needle)
+char *starts_with(const char *haystack,const char *needle)
 {
 	while (*needle)
-		if (*needle++ != *haystack++)
+	{
+		if (*needle != *haystack)
 			return (NULL);
+		needle++;
+		haystack++;
+	}
 	return ((char *)haystack);
 }
 
@@ -64,12 +72,24 @@ char *starts_with(const char *haystack, const char *needle)
  */
 char *_strcat(char *dest, char *src)
 {
-	char *ret = dest;
+	int i, j;
 
-	while (*dest)
-		dest++;
-	while (*src)
-		*dest++ = *src++;
-	*dest = *src;
-	return (ret);
+	i = 0;
+	while (dest[i] != '\0')
+	{
+		i++;
+	}
+
+	j = 0;
+	while (src[j] != '\0')
+	{
+		dest[i] = src[j];
+		i++;
+		j++;
+	}
+
+	dest[i] = '\0';
+
+	return (dest);
 }
+

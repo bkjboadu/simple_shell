@@ -73,13 +73,13 @@ int _putfd(char c, int fd)
  */
 int _putsfd(char *str, int fd)
 {
-	int i ;
+	int i = 0;
 
 	if (!str)
 		return (0);
-	for (i = 0; str[i] != '\0'; i++)
+	while (*str)
 	{
-		_putfd(str[i], fd);
+		i += _putfd(*str++, fd);
 	}
 	return (i);
 }

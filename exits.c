@@ -9,25 +9,14 @@
  */
 char *_strncpy(char *dest, char *src, int n)
 {
-	int i, j;
-	char *s = dest;
+	int i;
 
-	i = 0;
-	while (src[i] != '\0' && i < n - 1)
-	{
+	for (i = 0; i < n && src[i] != '\0'; i++)
 		dest[i] = src[i];
-		i++;
-	}
-	if (i < n)
-	{
-		j = i;
-		while (j < n)
-		{
-			dest[j] = '\0';
-			j++;
-		}
-	}
-	return (s);
+	for ( ; i < n; i++)
+		dest[i] = '\0';
+
+	return (dest);
 }
 
 /**
@@ -39,23 +28,23 @@ char *_strncpy(char *dest, char *src, int n)
  */
 char *_strncat(char *dest, char *src, int n)
 {
-	int i, j;
-	char *s = dest;
+	char *p = dest;
 
-	i = 0;
-	j = 0;
-	while (dest[i] != '\0')
-		i++;
-	while (src[j] != '\0' && j < n)
+	while (*p != '\0')
 	{
-		dest[i] = src[j];
-		i++;
-		j++;
+		p++;
 	}
-	if (j < n)
-		dest[i] = '\0';
-	return (s);
+
+	while (*src != '\0' && n > 0)
+	{
+		*p++ = *src++;
+		n--;
+	}
+
+	*p = '\0';
+	return (dest);
 }
+
 
 /**
  **_strchr - locates a character in a string
@@ -65,10 +54,13 @@ char *_strncat(char *dest, char *src, int n)
  */
 char *_strchr(char *s, char c)
 {
-	do {
+	for (; *s != '\0'; s++)
+	{
 		if (*s == c)
-			return (s);
-	} while (*s++ != '\0');
+		{
+			return (char *)s;
+		}
+	}
 
-	return (NULL);
+	return NULL;
 }

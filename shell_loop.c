@@ -9,38 +9,37 @@
  */
 int hsh(info_t *info, char **av)
 {
-	ssize_t r = 0;
-	int builtin_ret = 0;
+	int status = 0;
+	ssize_t r;
+	int builtin_ret;
 
-	while (r != -1 && builtin_ret != -2)
-	{
+	do {
 		clear_info(info);
 		if (interactive(info))
 			_puts("$ ");
 		_eputchar(BUF_FLUSH);
 		r = get_input(info);
-		if (r != -1)
+		if (r == -1)
 		{
-			set_info(info, av);
-			builtin_ret = find_builtin(info);
-			if (builtin_ret == -1)
-				find_cmd(info);
+			if (interactive(info))
+				_putchar('\n');
+			break;
 		}
-		else if (interactive(info))
-			_putchar('\n');
+		set_info(info, av);
+		builtin_ret = find_builtin(info);
+		if (builtin_ret == -1)
+			find_cmd(info);
 		free_info(info, 0);
-	}
+	} while (builtin_ret != -2);
+
 	write_history(info);
 	free_info(info, 1);
 	if (!interactive(info) && info->status)
-		exit(info->status);
-	if (builtin_ret == -2)
-	{
-		if (info->err_num == -1)
-			exit(info->status);
-		exit(info->err_num);
-	}
-	return (builtin_ret);
+		status = info->status;
+	else if (builtin_ret == -2 && info->err_num != -1)
+		status = info->err_num;
+
+	return (status);
 }
 
 /**
@@ -52,6 +51,7 @@ int hsh(info_t *info, char **av)
  * 1 if builtin found but not successful,
  * 2 if builtin signals exit()
  */
+
 int find_builtin(info_t *info)
 {
 	int i, built_in_ret = -1;
@@ -77,6 +77,7 @@ int find_builtin(info_t *info)
 	return (built_in_ret);
 }
 
+
 /**
  * find_cmd - finds a command in PATH
  * @info: the parameter & return info struct
@@ -86,32 +87,32 @@ int find_builtin(info_t *info)
 void find_cmd(info_t *info)
 {
 	char *path = NULL;
-	int i, k;
+	int i, arg_count = 0;
 
 	info->path = info->argv[0];
-	if (info->linecount_flag == 1)
+
+	for (i = 0; info->arg[i]; i++)
 	{
-		info->line_count++;
-		info->linecount_flag = 0;
-	}
-	for (i = 0, k = 0; info->arg[i]; i++)
 		if (!is_delim(info->arg[i], " \t\n"))
-			k++;
-	if (!k)
+			arg_count++;
+	}
+
+	if (arg_count == 0)
 		return;
 
 	path = find_path(info, _getenv(info, "PATH="), info->argv[0]);
+
 	if (path)
 	{
 		info->path = path;
 		fork_cmd(info);
-	}
-	else
+	} else
 	{
-		if ((interactive(info) || _getenv(info, "PATH=")
-					|| info->argv[0][0] == '/') && is_cmd(info, info->argv[0]))
+		if ((interactive(info) || _getenv(info, "PATH=") || info->argv[0][0] == '/')
+				&& is_cmd(info, info->argv[0]))
+		{
 			fork_cmd(info);
-		else if (*(info->arg) != '\n')
+		} else if (*(info->arg) != '\n')
 		{
 			info->status = 127;
 			print_error(info, "not found\n");
@@ -119,12 +120,14 @@ void find_cmd(info_t *info)
 	}
 }
 
+
 /**
  * fork_cmd - forks a an exec thread to run cmd
  * @info: the parameter & return info struct
  *
  * Return: void
  */
+
 void fork_cmd(info_t *info)
 {
 	pid_t child_pid;
@@ -132,7 +135,6 @@ void fork_cmd(info_t *info)
 	child_pid = fork();
 	if (child_pid == -1)
 	{
-		/* TODO: PUT ERROR FUNCTION */
 		perror("Error:");
 		return;
 	}

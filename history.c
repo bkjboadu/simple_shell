@@ -9,19 +9,21 @@
 
 char *get_history_file(info_t *info)
 {
-	char *buf, *dir;
+	char *home_dir = _getenv(info, "HOME");
+	size_t path_len = _strlen(home_dir) + _strlen("/") + _strlen(HIST_FILE) + 1;
+	char *path = malloc(path_len);
 
-	dir = _getenv(info, "HOME=");
-	if (!dir)
+	if (!home_dir)
 		return (NULL);
-	buf = malloc(sizeof(char) * (_strlen(dir) + _strlen(HIST_FILE) + 2));
-	if (!buf)
+
+	if (!path)
 		return (NULL);
-	buf[0] = 0;
-	_strcpy(buf, dir);
-	_strcat(buf, "/");
-	_strcat(buf, HIST_FILE);
-	return (buf);
+
+	_strcpy(path, home_dir);
+	_strcat(path, "/");
+	_strcat(path, HIST_FILE);
+
+	return (path);
 }
 
 /**
@@ -32,23 +34,31 @@ char *get_history_file(info_t *info)
  */
 int write_history(info_t *info)
 {
-	ssize_t fd;
 	char *filename = get_history_file(info);
-	list_t *node = NULL;
+	int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
+	list_t *node = info->history;
 
 	if (!filename)
 		return (-1);
 
-	fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
 	free(filename);
 	if (fd == -1)
 		return (-1);
-	for (node = info->history; node; node = node->next)
+
+	while (node)
 	{
-		_putsfd(node->str, fd);
-		_putfd('\n', fd);
+		ssize_t bytes_written = write(fd, node->str, strlen(node->str));
+
+		if (bytes_written == -1)
+		{
+			close(fd);
+			return (-1);
+		}
+		write(fd, "\n", 1);
+		node = node->next;
 	}
-	_putfd(BUF_FLUSH, fd);
+
+	write(fd, "\0", 1);
 	close(fd);
 	return (1);
 }
@@ -123,6 +133,8 @@ int build_history_list(info_t *info, char *buf, int linecount)
 	return (0);
 }
 
+
+
 /**
  * renumber_history - renumbers the history linked list after changes
  * @info: Structure containing potential arguments. Used to maintain
@@ -131,13 +143,18 @@ int build_history_list(info_t *info, char *buf, int linecount)
  */
 int renumber_history(info_t *info)
 {
-	list_t *node = info->history;
 	int i = 0;
+	list_t *node = info->history;
+
+	if (!info)
+		return (-1);
 
 	while (node)
 	{
 		node->num = i++;
 		node = node->next;
 	}
-	return (info->histcount = i);
+
+	info->histcount = i;
+	return (i);
 }
